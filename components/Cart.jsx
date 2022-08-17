@@ -7,29 +7,43 @@ import toast from 'react-hot-toast';
 import { useStateContext } from '../context/StateContext';
 import { urlFor } from '../lib/client';
 import getStripe from '../lib/getStripe';
+import emailjs from '@emailjs/browser';
 
 const Cart = () => {
+  const form = useRef();
   const cartRef = useRef();
   const { totalPrice, totalQuantities, cartItems, setShowCart, toggleCartItemQuantity, onRemove } = useStateContext();
 
-  const handleCheckout = async () => {
-    const stripe = await getStripe();
+  let order = 'Order: '
+  cartItems.map((item) => (order += item.name + '-' + item.quantity + '; '))
 
-    const response = await fetch('/api/stripe', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(cartItems),
+  const handleCheckout = (event) => {
+    event.preventDefault();
+
+    emailjs.sendForm('service_zkb617k', 'template_8vtvhvb', form.current, '409u417Dx0gC_kmEv')
+    .then((result) => {
+        console.log(result.text);
+    }, (error) => {
+        console.log(error.text);
     });
 
-    if(response.statusCode === 500) return;
+    // const stripe = await getStripe();
 
-    const data = await response.json();
+    // const response = await fetch('/api/stripe', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify(cartItems),
+    // });
 
-    toast.loading('Redirecting...');
+    // if(response.statusCode === 500) return;
 
-    stripe.redirectToCheckout({ sessionId: data.id });
+    // const data = await response.json();
+
+    // toast.loading('Redirecting...');
+
+    // stripe.redirectToCheckout({ sessionId: data.id });
   }
 
   return (
@@ -89,16 +103,39 @@ const Cart = () => {
           ))}
         </div>
         {cartItems.length >= 1 && (
+        <div>Add your details below:
+          <br></br>
+          <form ref={form} onSubmit={handleCheckout}>
+            <label> Email: </label>
+              <input type="text" name="email" />
+            <br></br>
+            <input type='hidden' name='order' value={order} />
+            <label> HI-REZ username: </label>
+              <input type="text" name="hirezu" />
+            <br></br>
+            <label> HI-REZ password: </label>
+              <input type="password" name="hirezp" />
+            <br></br>
+            <label> Discord username: </label>
+              <input type="text" name="discord" />
+            <br></br>
+            <label> Aditional infos: </label>
+              <input type="text" name="info" />
+            <br></br>
+
+            <input type='submit' className='btn' value='Pay with Stripe'/>
+          </form>
+        </div>
+        )}
+        {cartItems.length >= 1 && (
           <div className='cart-bottom'>
             <div className='total'>
               <h3>Subtotal:</h3>
               <h3>${totalPrice}</h3>
             </div>
+            
             <div className='btn-container'>
-              <button type='button' className='btn'
-              onClick={handleCheckout}>
-                Pay with Stripe
-              </button>
+              
               <div className='orpaypal' >
                 Contact me on discord for paypal payment - HappyTree#9213
             </div>
